@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ecg_analyzer/Screens/homeScreen.dart';
 import 'package:flutter_sizer/flutter_sizer.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'Utils/I18n.dart';
+import 'Utils/TranslationLoader.dart';
 
-void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Ensure Flutter is initialized first
-  await SystemChrome.setPreferredOrientations([
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await TranslationLoader.loadTranslations();
+  // remove vivisble status bar
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
@@ -26,6 +32,12 @@ class MyApp extends StatelessWidget {
             primarySwatch: Colors.lightBlue,
           ),
         ),
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: I18n.supportedLocales,
         home: SafeArea(child: HomeScreen()),
       );
     });

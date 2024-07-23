@@ -1,29 +1,31 @@
 import 'dart:math';
-import 'dart:typed_data';
 
 class SignalProcessor {
+  // Generate Butterworth bandpass filter coefficients
   List<List<double>> butterBandpass(int order, double lowcut, double highcut, double fs) {
     double nyquist = 0.5 * fs;
     double low = lowcut / nyquist;
     double high = highcut / nyquist;
 
     // Pre-warp the frequencies
-    double preW1 = tan(pi * low) / sqrt(2);
-    double preW2 = tan(pi * high) / sqrt(2);
+    double preW1 = tan(pi * low / 2);
+    double preW2 = tan(pi * high / 2);
 
+    // Calculate center frequency and bandwidth
     double w0 = sqrt(preW1 * preW2);
     double bw = preW2 - preW1;
 
-    // Generate filter coefficients
+    // Generate analog filter coefficients using bilinear transform
     List<double> a = List.filled(order + 1, 0.0);
     List<double> b = List.filled(order + 1, 0.0);
 
+    // Calculate analog coefficients
     for (int i = 0; i <= order; i++) {
-      a[i] = pow(-1, i) * double.parse(binomialCoeff(order, i).toString()) * pow(w0, i);
+      a[i] = pow(-1, i).toDouble() * binomialCoeff(order, i).toDouble() * pow(w0, i).toDouble();
     }
 
     for (int i = 0; i <= order; i++) {
-      b[i] = pow(w0, order - i) * binomialCoeff(order, i) * cos(pi * (2 * i + order - 1) / (2 * order));
+      b[i] = pow(w0, order - i).toDouble() * binomialCoeff(order, i).toDouble() * cos(pi * (2 * i + order - 1) / (2 * order)).toDouble();
     }
 
     // Normalize the coefficients
@@ -36,6 +38,7 @@ class SignalProcessor {
     return [b, a];
   }
 
+  // Calculate binomial coefficient
   int binomialCoeff(int n, int k) {
     if (k > n - k) k = n - k;
     int c = 1;
