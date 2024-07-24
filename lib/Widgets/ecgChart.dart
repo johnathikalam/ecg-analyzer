@@ -730,12 +730,16 @@ class _EcgchartState extends State<Ecgchart> {
          ),
      Align(
        alignment: Alignment.bottomCenter,
-       child: IconButton(
-           onPressed: (){},
-           icon:Icon(Icons.keyboard_arrow_up_rounded,
-             size: 30,
-           )
-       ),
+       child: GestureDetector(
+         onTap:(){},
+         child: Container(
+           padding: EdgeInsets.symmetric(horizontal: 15),
+           decoration: BoxDecoration(
+             borderRadius: BorderRadius.circular(10),
+             color:Colors.grey.withOpacity(.3)
+           ),
+             child: Icon(Icons.keyboard_arrow_up_rounded, size: 30,)),
+       )
      )
    ],
  );
