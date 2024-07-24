@@ -135,263 +135,263 @@ class _EcgchartState extends State<Ecgchart> {
              height: MediaQuery.of(context).size.height*0.99,
              child: Stack(
                children: [
-                     LineChart(
-                       LineChartData(
-                         lineTouchData: LineTouchData(
-                           enabled: true,
-                           mouseCursorResolver: (p0, p1) {
-                             return SystemMouseCursors.precise;
-                           },
-                           touchSpotThreshold: 5,
-                           distanceCalculator:
-                               (touchPoint, spotPixelCoordinates) {
-                             return (touchPoint -
-                                 spotPixelCoordinates)
-                                 .distance;
-                           },
-                           touchCallback: (event, response) {
-                             if (event is FlTapUpEvent) {
-                               if (response != null) {
-                                 if (response.lineBarSpots !=
-                                     null) {
-                                   if (response
-                                       .lineBarSpots!.isNotEmpty) {
-                                     int x = (response
-                                         .lineBarSpots![0]
-                                         .x /
-                                         speed! /
-                                         0.004)
-                                         .round()
-                                         .toInt();
-                                     double y =
-                                     ecgData![x.toInt()];
+                 LineChart(
+                   LineChartData(
+                     lineTouchData: LineTouchData(
+                       enabled: true,
+                       mouseCursorResolver: (p0, p1) {
+                         return SystemMouseCursors.precise;
+                       },
+                       touchSpotThreshold: 5,
+                       distanceCalculator:
+                           (touchPoint, spotPixelCoordinates) {
+                         return (touchPoint -
+                             spotPixelCoordinates)
+                             .distance;
+                       },
+                       touchCallback: (event, response) {
+                         if (event is FlTapUpEvent) {
+                           if (response != null) {
+                             if (response.lineBarSpots !=
+                                 null) {
+                               if (response
+                                   .lineBarSpots!.isNotEmpty) {
+                                 int x = (response
+                                     .lineBarSpots![0]
+                                     .x /
+                                     speed! /
+                                     0.004)
+                                     .round()
+                                     .toInt();
+                                 double y =
+                                 ecgData![x.toInt()];
 
-                                     // if (file && loaded) {
-                                     //   BlocProvider.of<
-                                     //       InitScreenBloc>(
-                                     //       context)
-                                     //       .add(SetRulePointInitScreen(
-                                     //       spot: FlSpot(
-                                     //           x.toDouble(),
-                                     //           y)));
-                                     // }
-                                   //}
-                                 } else {
-
-                                       ResetRulePointInitScreen();
-                                 }
+                                 // if (file && loaded) {
+                                 //   BlocProvider.of<
+                                 //       InitScreenBloc>(
+                                 //       context)
+                                 //       .add(SetRulePointInitScreen(
+                                 //       spot: FlSpot(
+                                 //           x.toDouble(),
+                                 //           y)));
+                                 // }
+                                 //}
                                } else {
 
-                                     ResetRulePointInitScreen();
+                                 ResetRulePointInitScreen();
                                }
+                             } else {
+
+                               ResetRulePointInitScreen();
                              }
-                           };},
-                           touchTooltipData: LineTouchTooltipData(
-                             //maxContentWidth: 1,
+                           }
+                         };},
+                       touchTooltipData: LineTouchTooltipData(
+                         //maxContentWidth: 1,
 
-                             fitInsideHorizontally: true,
-                             fitInsideVertically: true,
-                             maxContentWidth: 300.dp,
-                             getTooltipItems: (touchedSpots) {
-                               final textStyle = TextStyle(
-                                 color: Colors.white,
-                                 fontWeight: FontWeight.bold,
-                                 fontSize: 12.dp,
-                               );
-                               if (touchedSpots.length > 1 &&
-                                   initSpot != null &&
-                                   endSpot != null) {
-                                 double init =
-                                 ((initSpot.x) / speed!);
-                                 double end =
-                                 ((endSpot.x) / speed!);
-                                 double initY =
-                                     initSpot.y / scale!;
-                                 double endY = endSpot.y / scale!;
-                                 return [
-                                   LineTooltipItem(
-                                       '${I18n.translate("timeDifference")}: ${((end - init).abs()).toStringAsFixed(3)} s\n${I18n.translate("voltageDifference")}: ${((endY - initY).abs()).toStringAsFixed(2)} mV',
-                                       textStyle),
-                                   LineTooltipItem(
-                                       '${I18n.translate("time")}: ${(touchedSpots[1].x / speed!).toStringAsFixed(3)} s\n${I18n.translate("voltage")}: ${(touchedSpots[1].y / scale!).toStringAsFixed(2)} mV',
-                                       textStyle),
-                                 ];
-                               }
-                               if (touchedSpots.length > 1) {
-                                 touchedSpots.removeAt(0);
-                               }
-                               return touchedSpots
-                                   .map((LineBarSpot touchedSpot) {
-                                 return LineTooltipItem(
-                                     '${I18n.translate("time")}: ${(touchedSpot.x / speed!).toStringAsFixed(3)} s\n${I18n.translate("voltage")}: ${(touchedSpot.y / scale!).toStringAsFixed(2)} mV',
-                                     textStyle);
-                               }).toList();
-                             },
-                           ),
-                           handleBuiltInTouches: true,
-                           getTouchedSpotIndicator:
-                               (barData, spotIndexes) {
-                             return spotIndexes.map((spotIndex) {
-                               final spot =
-                               barData.spots[spotIndex];
-                               if (spot.x == 0 || spot.x == 1) {
-                                 return null;
-                               }
-                               return TouchedSpotIndicatorData(
-                                 FlLine(
-                                   color: Colors.transparent,
-                                   strokeWidth: 4,
-                                 ),
-                                 FlDotData(
-                                   show: true,
-                                   getDotPainter: (spot, percent,
-                                       barData, index) {
-                                     return FlDotCirclePainter(
-                                       radius: 4,
-                                       color: MyColors.RedL,
-                                       strokeWidth: 2,
-                                       strokeColor: Colors.white,
-                                     );
-                                   },
-                                 ),
-                               );
-                             }).toList();
-                           },
-                         ),
-
-                         lineBarsData: [
-                           LineChartBarData(
-                             //show: filterShow.isNotEmpty,
-                             // spots: dataToDisplay.asMap().entries.map((entry) {
-                             //   return FlSpot(entry.key.toDouble(), double.parse(entry.value.toString()));
-                             // }).toList(),
-                             spots: dataToDisplay!
-                                 .asMap()
-                                 .entries
-                                 .map((e) => FlSpot(
-                                 e.key.toDouble() *
-                                     0.00099*
-                                     speed,
-                                 e.value))
-                                 .toList(),
-                             isCurved: false,
-                             preventCurveOverShooting: true,
-                             curveSmoothness: 0.1,
-                             isStrokeCapRound: false,
-                             color: Colors.redAccent.withOpacity(.7),
-                             barWidth: 2,
-                             belowBarData: BarAreaData(
-                               show: false,
+                         fitInsideHorizontally: true,
+                         fitInsideVertically: true,
+                         maxContentWidth: 300.dp,
+                         getTooltipItems: (touchedSpots) {
+                           final textStyle = TextStyle(
+                             color: Colors.white,
+                             fontWeight: FontWeight.bold,
+                             fontSize: 12.dp,
+                           );
+                           if (touchedSpots.length > 1 &&
+                               initSpot != null &&
+                               endSpot != null) {
+                             double init =
+                             ((initSpot.x) / speed!);
+                             double end =
+                             ((endSpot.x) / speed!);
+                             double initY =
+                                 initSpot.y / scale!;
+                             double endY = endSpot.y / scale!;
+                             return [
+                               LineTooltipItem(
+                                   '${I18n.translate("timeDifference")}: ${((end - init).abs()).toStringAsFixed(3)} s\n${I18n.translate("voltageDifference")}: ${((endY - initY).abs()).toStringAsFixed(2)} mV',
+                                   textStyle),
+                               LineTooltipItem(
+                                   '${I18n.translate("time")}: ${(touchedSpots[1].x / speed!).toStringAsFixed(3)} s\n${I18n.translate("voltage")}: ${(touchedSpots[1].y / scale!).toStringAsFixed(2)} mV',
+                                   textStyle),
+                             ];
+                           }
+                           if (touchedSpots.length > 1) {
+                             touchedSpots.removeAt(0);
+                           }
+                           return touchedSpots
+                               .map((LineBarSpot touchedSpot) {
+                             return LineTooltipItem(
+                                 '${I18n.translate("time")}: ${(touchedSpot.x / speed!).toStringAsFixed(3)} s\n${I18n.translate("voltage")}: ${(touchedSpot.y / scale!).toStringAsFixed(2)} mV',
+                                 textStyle);
+                           }).toList();
+                         },
+                       ),
+                       handleBuiltInTouches: true,
+                       getTouchedSpotIndicator:
+                           (barData, spotIndexes) {
+                         return spotIndexes.map((spotIndex) {
+                           final spot =
+                           barData.spots[spotIndex];
+                           if (spot.x == 0 || spot.x == 1) {
+                             return null;
+                           }
+                           return TouchedSpotIndicatorData(
+                             FlLine(
+                               color: Colors.transparent,
+                               strokeWidth: 4,
                              ),
-                             dotData: FlDotData(show: false),
-                           ),
+                             FlDotData(
+                               show: true,
+                               getDotPainter: (spot, percent,
+                                   barData, index) {
+                                 return FlDotCirclePainter(
+                                   radius: 4,
+                                   color: MyColors.RedL,
+                                   strokeWidth: 2,
+                                   strokeColor: Colors.white,
+                                 );
+                               },
+                             ),
+                           );
+                         }).toList();
+                       },
+                     ),
 
-                           LineChartBarData(
-                             show: (initSpot != null ||
-                                 endSpot != null)
-                                 ? true
-                                 : false,
-                             color: MyColors.purpleL,
-                             spots: [
-                               initSpot ?? const FlSpot(0, 0),
-                               endSpot ??
-                                   (initSpot ??
-                                       const FlSpot(0, 0)),
-                             ],
-                           ),
-                         ],
-                         titlesData: FlTitlesData(
+                     lineBarsData: [
+                       LineChartBarData(
+                         //show: filterShow.isNotEmpty,
+                         // spots: dataToDisplay.asMap().entries.map((entry) {
+                         //   return FlSpot(entry.key.toDouble(), double.parse(entry.value.toString()));
+                         // }).toList(),
+                         spots: dataToDisplay!
+                             .asMap()
+                             .entries
+                             .map((e) => FlSpot(
+                             e.key.toDouble() *
+                                 0.00099*
+                                 speed,
+                             e.value))
+                             .toList(),
+                         isCurved: false,
+                         preventCurveOverShooting: true,
+                         curveSmoothness: 0.1,
+                         isStrokeCapRound: false,
+                         color: Colors.redAccent.withOpacity(.7),
+                         barWidth: 2,
+                         belowBarData: BarAreaData(
                            show: false,
-                           leftTitles: AxisTitles(
-                             axisNameWidget: Text(
-                               'Voltage [mV]',
-                               style: TextStyle(
-                                 color: Colors.black
-                                     .withOpacity(0.5), // 0.2
-                                 fontWeight: FontWeight.bold,
-                                 fontSize: 12.dp,
-                               ),
-                             ),
-                             sideTitles: SideTitles(
-                               showTitles: true,
-                               //getTitlesWidget: leftTitleWidgets,
-                               reservedSize: 30.dp,
-                             ),
-                           ),
-                           rightTitles: AxisTitles(
-                             sideTitles:
-                             SideTitles(showTitles: false),
-                           ),
-                           bottomTitles: AxisTitles(
-                             axisNameWidget: Text(
-                               'Time [s]',
-                               textAlign: TextAlign.center,
-                               style: TextStyle(
-                                 color: Colors.black
-                                     .withOpacity(0.5), // 0.2
-                                 fontWeight: FontWeight.bold,
-                                 fontSize: 12.dp,
-                               ),
-                             ),
-                             sideTitles: SideTitles(
-                               showTitles: true,
-                               //getTitlesWidget: bottomTitleWidgets,
-                               reservedSize: 26.dp,
-                             ),
-                           ),
-                           topTitles: AxisTitles(
-                             sideTitles:
-                             SideTitles(showTitles: false),
+                         ),
+                         dotData: FlDotData(show: false),
+                       ),
+
+                       LineChartBarData(
+                         show: (initSpot != null ||
+                             endSpot != null)
+                             ? true
+                             : false,
+                         color: MyColors.purpleL,
+                         spots: [
+                           initSpot ?? const FlSpot(0, 0),
+                           endSpot ??
+                               (initSpot ??
+                                   const FlSpot(0, 0)),
+                         ],
+                       ),
+                     ],
+                     titlesData: FlTitlesData(
+                       show: false,
+                       leftTitles: AxisTitles(
+                         axisNameWidget: Text(
+                           'Voltage [mV]',
+                           style: TextStyle(
+                             color: Colors.black
+                                 .withOpacity(0.5), // 0.2
+                             fontWeight: FontWeight.bold,
+                             fontSize: 12.dp,
                            ),
                          ),
-                         gridData: FlGridData(
-                           show: true,
-                           drawHorizontalLine: true,
-                           drawVerticalLine: true,
-                           horizontalInterval:
-                           1, // scale in mV (0.1 mV)
-                           verticalInterval: 1, // scale to show
-                           getDrawingHorizontalLine: (value) {
-                             return value % 5 == 0
-                                 ? FlLine(
-                               color: MyColors.BlueL, // 0.2
-                               strokeWidth: 0.5,
-                             )
-                                 : FlLine(
-                               color: MyColors.BlueL, // 0.2
-                               strokeWidth: 0.1,
-                             );
-                           },
-                           getDrawingVerticalLine: (value) {
-                             return value % 5 == 0
-                                 ? FlLine(
-                               color: MyColors.BlueL, // 0.2
-                               strokeWidth: 0.5,
-                             )
-                                 : FlLine(
-                               color: MyColors.BlueL, // 0.2
-                               strokeWidth: 0.1,
-                             );
-                           },
+                         sideTitles: SideTitles(
+                           showTitles: true,
+                           //getTitlesWidget: leftTitleWidgets,
+                           reservedSize: 30.dp,
                          ),
-                         borderData: FlBorderData(
-                           show: true,
-                           border: Border.all(
-                             color: MyColors.RedL,
-                             width: 1,
+                       ),
+                       rightTitles: AxisTitles(
+                         sideTitles:
+                         SideTitles(showTitles: false),
+                       ),
+                       bottomTitles: AxisTitles(
+                         axisNameWidget: Text(
+                           'Time [s]',
+                           textAlign: TextAlign.center,
+                           style: TextStyle(
+                             color: Colors.black
+                                 .withOpacity(0.5), // 0.2
+                             fontWeight: FontWeight.bold,
+                             fontSize: 12.dp,
                            ),
                          ),
-                         // maxY: 30 * zoom! + baselineY!,
-                         // minY: -30 * zoom! + baselineY!,
-                         // minX: (0) + baselineX!,
-                         // maxX: ((80) * zoom! + baselineX!),
-                         maxY: 0.1,
-                         minY: 1,
-                         minX: (0) + baselineX!,
-                         maxX: ((80) * zoom! + baselineX!),
-                          clipData: FlClipData.all(),
+                         sideTitles: SideTitles(
+                           showTitles: true,
+                           //getTitlesWidget: bottomTitleWidgets,
+                           reservedSize: 26.dp,
+                         ),
+                       ),
+                       topTitles: AxisTitles(
+                         sideTitles:
+                         SideTitles(showTitles: false),
                        ),
                      ),
+                     gridData: FlGridData(
+                       show: true,
+                       drawHorizontalLine: true,
+                       drawVerticalLine: true,
+                       horizontalInterval:
+                       1, // scale in mV (0.1 mV)
+                       verticalInterval: 1, // scale to show
+                       getDrawingHorizontalLine: (value) {
+                         return value % 5 == 0
+                             ? FlLine(
+                           color: MyColors.BlueL, // 0.2
+                           strokeWidth: 0.5,
+                         )
+                             : FlLine(
+                           color: MyColors.BlueL, // 0.2
+                           strokeWidth: 0.1,
+                         );
+                       },
+                       getDrawingVerticalLine: (value) {
+                         return value % 5 == 0
+                             ? FlLine(
+                           color: MyColors.BlueL, // 0.2
+                           strokeWidth: 0.5,
+                         )
+                             : FlLine(
+                           color: MyColors.BlueL, // 0.2
+                           strokeWidth: 0.1,
+                         );
+                       },
+                     ),
+                     borderData: FlBorderData(
+                       show: true,
+                       border: Border.all(
+                         color: MyColors.RedL,
+                         width: 1,
+                       ),
+                     ),
+                     // maxY: 30 * zoom! + baselineY!,
+                     // minY: -30 * zoom! + baselineY!,
+                     // minX: (0) + baselineX!,
+                     // maxX: ((80) * zoom! + baselineX!),
+                     maxY: 0.1,
+                     minY: 1,
+                     minX: (0) + baselineX!,
+                     maxX: ((80) * zoom! + baselineX!),
+                     clipData: FlClipData.all(),
+                   ),
+                 )
                     ]
                   ),
            ),
@@ -727,5 +727,8 @@ class _EcgchartState extends State<Ecgchart> {
          ),*/
      );
   }
+
 }
+
+
 
