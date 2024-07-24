@@ -68,6 +68,13 @@ class SignalProcessor {
 
   // Normalize the data
   List<double> normalize(List<double> data) {
+    // Filter out NaN values
+    data = data.where((value) => value.isFinite).toList();
+
+    if (data.isEmpty) {
+      throw StateError('No valid elements to normalize');
+    }
+
     double maxVal = data.reduce(max);
     double minVal = data.reduce(min);
     List<double> normalizedData = data.map((value) => (value - minVal) / (maxVal - minVal)).toList();
