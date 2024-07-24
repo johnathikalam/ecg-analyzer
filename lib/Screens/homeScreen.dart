@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../Utils/I18n.dart';
-import 'ecgChart.dart';
+import '../Widgets/ecgChart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
