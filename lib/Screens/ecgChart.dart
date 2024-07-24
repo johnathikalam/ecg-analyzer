@@ -212,24 +212,24 @@ class Ecgchart extends StatelessWidget {
                          lineBarsData: [
                            LineChartBarData(
                              //show: filterShow.isNotEmpty,
-                             spots: dataToDisplay.asMap().entries.map((entry) {
-                               return FlSpot(entry.key.toDouble(), double.parse(entry.value.toString()));
-                             }).toList(),
-                             // spots: filterShow
-                             //     .asMap()
-                             //     .entries
-                             //     .map((e) => FlSpot(
-                             //     e.key.toDouble() *
-                             //         0.004 *
-                             //         speed!,
-                             //     e.value))
-                             //     .toList(),
+                             // spots: dataToDisplay.asMap().entries.map((entry) {
+                             //   return FlSpot(entry.key.toDouble(), double.parse(entry.value.toString()));
+                             // }).toList(),
+                             spots: dataToDisplay
+                                 .asMap()
+                                 .entries
+                                 .map((e) => FlSpot(
+                                 e.key.toDouble() *
+                                     0.002 *
+                                     speed!,
+                                 e.value))
+                                 .toList(),
                              isCurved: false,
                              preventCurveOverShooting: true,
                              curveSmoothness: 0.1,
                              isStrokeCapRound: false,
                              color: Colors.redAccent.withOpacity(.7),
-                             barWidth: 1,
+                             barWidth: 2,
                              belowBarData: BarAreaData(
                                show: false,
                              ),
@@ -331,11 +331,15 @@ class Ecgchart extends StatelessWidget {
                              width: 1,
                            ),
                          ),
+                         // maxY: 30 * zoom! + baselineY!,
+                         // minY: -30 * zoom! + baselineY!,
+                         // minX: (0) + baselineX!,
+                         // maxX: ((80) * zoom! + baselineX!),
                          maxY: 1,
                          minY: 0.1,
                          minX: (0) + baselineX!,
                          maxX: ((80) * zoom! + baselineX!),
-                         clipData: FlClipData.all(),
+                          clipData: FlClipData.all(),
                        ),
                      ),
                     ]
