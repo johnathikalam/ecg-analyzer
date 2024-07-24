@@ -21,12 +21,14 @@ class Ecgchart extends StatefulWidget {
 }
 
 class _EcgchartState extends State<Ecgchart> {
-
-  List<double>? ecgData;
+  bool _isLoaded = false;
+  //List<double>? ecgData;
+  List<double>? normalizedData;
 
 
   @override
   void initState() {
+    _isLoaded = true;
     super.initState();
     loadEcgData();
   }
@@ -36,8 +38,22 @@ class _EcgchartState extends State<Ecgchart> {
       List<int> data = await readCsv('assets/CSV/rec_3.csv');
       List<double> data1 = data.map((int value) => value.toDouble()).toList();
 
+      SignalProcessor processor = SignalProcessor();
+
+      int order = 5;
+      double fs = 500.0;
+      double lowcut = 0.5;
+      double highcut = 50.0;
+
+      // Filter the data
+      List<double> filteredData = processor.bandpassFilter(data1??[], order, lowcut, highcut, fs);
+
+      // Normalize the data
+      normalizedData = processor.normalize(filteredData);
+
+
       setState(() {
-        ecgData = data1;
+        _isLoaded = false;
       });
     } catch (e) {
       print('Error loading ecg data: $e');
@@ -60,38 +76,26 @@ class _EcgchartState extends State<Ecgchart> {
 
   @override
   Widget build(BuildContext context) {
-    SignalProcessor processor = SignalProcessor();
-
-    int order = 5;
-    double fs = 500.0;
-    double lowcut = 0.5;
-    double highcut = 50.0;
-
-    // Filter the data
-    List<double> filteredData = processor.bandpassFilter(ecgData??[], order, lowcut, highcut, fs);
-
-    // Normalize the data
-    List<double> normalizedData = processor.normalize(filteredData);
 
     final dataToDisplay = normalizedData;
     // final dataToDisplay = normalizedData.length > 4000
     //     ? normalizedData.sublist(normalizedData.length - 4000)
     //     : normalizedData;
 
-    List<double>? filterData = filteredData;
+    //List<double>? filterData = filteredData;
     double scale =10;
     double speed = 20;
     double zoom = 1;
     double baselineX = 0;
     double baselineY = 0;
-    List<double> ecgShow = [];
-    for (int i = 0; i < ecgData!.length; i++) {
-      ecgShow.add(ecgData![i] * scale!);
-    }
-    List<double> filterShow = [];
-    for (int i = 0; i < filterData!.length; i++) {
-      filterShow.add(filterData![i] * scale!);
-    }
+    // List<double> ecgShow = [];
+    // for (int i = 0; i < ecgData!.length; i++) {
+    //   ecgShow.add(ecgData![i] * scale!);
+    // }
+    // List<double> filterShow = [];
+    // for (int i = 0; i < filterData!.length; i++) {
+    //   filterShow.add(filterData![i] * scale!);
+    // }
     FlSpot? initSpot;
     FlSpot? endSpot;
      initSpot = initSpot != null
@@ -112,30 +116,30 @@ class _EcgchartState extends State<Ecgchart> {
       initSpot;
       endSpot;
     }
- return normalizedData.isEmpty ?
+ return _isLoaded ?
  Center(child: CircularProgressIndicator()):
- Container(
-   width: double.infinity,
-   height: MediaQuery.of(context).size.height*0.99,
-   color: Colors.white,
-     padding: EdgeInsets.only(
-       top: 12.dp,
-       bottom: 10.dp,
-       left: 10.dp,
-       right: 10.dp,
-     ),
-     child: SingleChildScrollView(
-       scrollDirection: Axis.horizontal,
-       child: Row(
-         children: [
-           Container(
-               width: double.parse(normalizedData?.length.toString()??"")*0.08,
-             // width: MediaQuery.of(context).size.width*.04,
-             //width: 10000,
-             height: MediaQuery.of(context).size.height*0.99,
-             child: Stack(
-               children: [
-                 LineChart(
+ Stack(
+   children: [
+     Container(
+       width: double.infinity,
+       height: MediaQuery.of(context).size.height*0.99,
+       color: Colors.white,
+         padding: EdgeInsets.only(
+           top: 12.dp,
+           bottom: 10.dp,
+           left: 10.dp,
+           right: 10.dp,
+         ),
+         child: SingleChildScrollView(
+           scrollDirection: Axis.horizontal,
+           child: Row(
+             children: [
+               Container(
+                   width: double.parse(normalizedData?.length.toString()??"")*0.08,
+                 // width: MediaQuery.of(context).size.width*.04,
+                 //width: 10000,
+                 height: MediaQuery.of(context).size.height*0.99,
+                 child: LineChart(
                    LineChartData(
                      lineTouchData: LineTouchData(
                        enabled: true,
@@ -164,7 +168,7 @@ class _EcgchartState extends State<Ecgchart> {
                                      .round()
                                      .toInt();
                                  double y =
-                                 ecgData![x.toInt()];
+                                 normalizedData![x.toInt()];
 
                                  // if (file && loaded) {
                                  //   BlocProvider.of<
@@ -391,341 +395,350 @@ class _EcgchartState extends State<Ecgchart> {
                      maxX: ((80) * zoom! + baselineX!),
                      clipData: FlClipData.all(),
                    ),
-                 )
-                    ]
-                  ),
-           ),
-         ],
-       ),
-     ),
-         /*
-         Positioned(
-           top : 0,
-           left: 0,
-           right: 0,
-           child: BlocBuilder<InitScreenBloc, InitScreenState>(
-             builder: (context, state) {
-               double maxvalue = 0;
-
-               if (state is InitScreenTools) {
-                 speed = state.speed;
-                 zoom = state.zoom;
-                 scale = state.scale;
-                 baselineX = state.baselineX;
-                 maxvalue = state.silverMax;
-                 file = state.file;
-                 loaded = state.loaded;
-               }
-               baselineX ??= 0;
-               speed ??= 25;
-               zoom ??= 1;
-               if (file && loaded) {
-                 return Tooltip(
-                   message:
-                   I18n.translate("horizontalAlignment"),
-                   child: Slider(
-                     onChanged: (value) {
-                       BlocProvider.of<InitScreenBloc>(context)
-                           .add(ChangeBaselineXInitScreen(
-                           baselineX: (value)));
-                     },
-                     value: baselineX!,
-                     min: 0,
-                     max: maxvalue,
-                   ),
-                 );
-               }
-
-               return Container(
-                 height: 0.0,
-               );
-             },
-             buildWhen: (previous, current) =>
-             current is InitScreenTools,
-           ),
-         ),
-         Positioned(
-           bottom: 0,
-           left: 0,
-           child: Container(
-             width: 20.w,
-             padding: EdgeInsets.only(
-               left: 2.dp,
-             ),
-             decoration: BoxDecoration(
-               color: MyColors.RedL,
-               borderRadius: BorderRadius.circular(5.dp),
-             ),
-             child:
-             BlocBuilder<InitScreenBloc, InitScreenState>(
-               builder: (context, state) {
-                 if (state is InitScreenTools) {
-                   file = state.file;
-                   resultAr = state.result;
-                 }
-
-                 return Text(
-                   resultAr != null
-                       ? "${I18n.translate("project")}: ${resultAr!.nameFile}"
-                       : "${I18n.translate("project")}: ${I18n.translate("noLoaded")}",
-                   overflow: TextOverflow.ellipsis,
-                   maxLines: 2,
-                   style: TextStyle(
-                     color: Colors.white,
-                     fontWeight: FontWeight.bold,
-                     fontSize: 10.dp,
-                   ),
-                 );
-               },
-               buildWhen: (previous, current) =>
-               current is InitScreenTools,
-             ),
-           ),
-         ),
-         Positioned(
-           bottom: 0,
-           right: 0,
-           child: Container(
-             //padding: EdgeInsets.all(5.dp),
-             alignment: Alignment.bottomRight,
-             decoration: const BoxDecoration(
-               color: Colors.transparent,
-               //borderRadius: BorderRadius.circular(5.dp),
-             ),
-             child:
-             BlocBuilder<InitScreenBloc, InitScreenState>(
-               builder: (context, state) {
-                 String scaleText = "";
-                 String speedText = "";
-                 if (state is InitScreenTools) {
-                   scale = state.scale;
-                   speed = state.speed;
-                   file = state.file;
-                   resultAr = state.result;
-                 }
-                 if (scale == 10.0) {
-                   scaleText = '10';
-                 } else if (scale == 20.0) {
-                   scaleText = '20';
-                 } else if (scale == 30.0) {
-                   scaleText = '30';
-                 } else if (scale == 2.0) {
-                   scaleText = '2';
-                 } else if (scale == 2.5) {
-                   scaleText = '2.5';
-                 } else if (scale == 5.0) {
-                   scaleText = '5';
-                 }
-
-                 if (speed == 25.0) {
-                   speedText = '25';
-                 } else if (speed == 30.0) {
-                   speedText = '30';
-                 } else if (speed == 50.0) {
-                   speedText = '50';
-                 } else if (speed == 20.0) {
-                   speedText = '20';
-                 }
-
-                 return Column(
-                   children: [
-                     Container(
-                       padding: EdgeInsets.all(5.dp),
-                       decoration: BoxDecoration(
-                         color: MyColors.RedL,
-                         borderRadius:
-                         BorderRadius.circular(5.dp),
-                       ),
-                       child: Text(
-                         '${I18n.translate("ecgSignal")} \t ${I18n.translate("scale")}: $scaleText div/mV \t ${I18n.translate("speed")}: $speedText div/s',
-                         style: TextStyle(
-                           color: Colors.white,
-                           fontWeight: FontWeight.bold,
-                           fontSize: 12.dp,
-                         ),
-                       ),
-                     ),
-                   ],
-                 );
-               },
-               buildWhen: (previous, current) =>
-               current is InitScreenTools,
-             ),
-           ),
-         ),
-         BlocBuilder<InitScreenBloc, InitScreenState>(
-           builder: (context, state) {
-             double maxvalue = 0;
-             if (state is InitScreenTools) {
-               maxvalue = state.silverMax;
-               baselineX = state.baselineX;
-               resultAr = state.result;
-               loaded = state.loaded;
-             }
-             baselineX ??= 0;
-             if (baselineX! < maxvalue * 0.1 &&
-                 resultAr != null &&
-                 loaded) {
-               if (resultAr!.isStarted) {
-                 return Positioned(
-                   left: 0,
-                   top: 60.dp,
-                   child: Tooltip(
-                     message: I18n.translate("previousSignal"),
-                     waitDuration: const Duration(seconds: 1),
-                     child: Container(
-                       decoration: BoxDecoration(
-                         color: MyColors.RedL,
-                         borderRadius:
-                         BorderRadius.circular(5.dp),
-                       ),
-                       padding: EdgeInsets.all(5.dp),
-                       child: IconButton(
-                         icon: Icon(
-                           Icons.arrow_back_ios,
-                           color: Colors.white,
-                           size: 20.dp,
-                         ),
-                         onPressed: () {
-                           BlocProvider.of<InitScreenBloc>(
-                               context)
-                               .add(
-                               PreviousECGDataInitScreen());
-                         },
-                       ),
-                     ),
-                   ),
-                 );
-               } else {
-                 return const SizedBox(
-                   height: 0.0,
-                   width: 0.0,
-                 );
-               }
-             } else {
-               return const SizedBox(
-                 height: 0.0,
-                 width: 0.0,
-               );
-             }
-           },
-           buildWhen: (previous, current) =>
-           current is InitScreenTools,
-         ),
-         BlocBuilder<InitScreenBloc, InitScreenState>(
-           builder: (context, state) {
-             double maxvalue = 0;
-             if (state is InitScreenTools) {
-               maxvalue = state.silverMax;
-               baselineX = state.baselineX;
-               resultAr = state.result;
-               loaded = state.loaded;
-             }
-             baselineX ??= 0;
-             if (baselineX! > maxvalue * 0.9 &&
-                 resultAr != null &&
-                 loaded) {
-               if (!resultAr!.isFinished) {
-                 return Positioned(
-                   right: 0,
-                   top: 60.dp,
-                   child: Tooltip(
-                     message: I18n.translate("nextSignal"),
-                     waitDuration: const Duration(seconds: 1),
-                     child: Container(
-                       decoration: BoxDecoration(
-                         color: MyColors.RedL,
-                         borderRadius:
-                         BorderRadius.circular(5.dp),
-                       ),
-                       padding: EdgeInsets.all(5.dp),
-                       child: IconButton(
-                         icon: Icon(
-                           Icons.arrow_forward_ios,
-                           color: Colors.white,
-                           size: 20.dp,
-                         ),
-                         onPressed: () {
-                           BlocProvider.of<InitScreenBloc>(
-                               context)
-                               .add(NextECGDataInitScreen());
-                         },
-                       ),
-                     ),
-                   ),
-                 );
-               } else {
-                 return const SizedBox(
-                   height: 0.0,
-                   width: 0.0,
-                 );
-               }
-             } else {
-               return const SizedBox(
-                 height: 0.0,
-                 width: 0.0,
-               );
-             }
-           },
-           buildWhen: (previous, current) =>
-           current is InitScreenTools,
-         ),
-         BlocBuilder<InitScreenBloc, InitScreenState>(
-           builder: (context, state) {
-             if (state is InitScreenTools) {
-               file = state.file;
-               resultAr = state.result;
-             }
-             if (state
-             is DisconnectBluetoothDeviceInitScreenState) {
-               file = true;
-             }
-             if (file == false) {
-               return Positioned(
-                 top: 5.dp,
-                 right: 5.dp,
-                 child: Tooltip(
-                   message: I18n.translate("disconnect"),
-                   waitDuration: const Duration(seconds: 1),
-                   child: IconButton(
-                     style: ButtonStyle(
-                       backgroundColor:
-                       MaterialStateProperty.all<Color>(
-                           MyColors.RedL),
-                       // set circular button shape
-                       shape: MaterialStateProperty.all<
-                           RoundedRectangleBorder>(
-                           RoundedRectangleBorder(
-                             borderRadius:
-                             BorderRadius.circular(10.dp),
-                           )),
-                     ),
-                     onPressed: () {
-                       BlocProvider.of<InitScreenBloc>(context)
-                           .add(
-                           DisconnectBluetoothDeviceInitScreen());
-                     },
-                     icon: Icon(
-                       Icons.bluetooth_connected,
-                       color: MyColors.grayL,
-                       size: 22.dp,
-                     ),
-                   ),
                  ),
-               );
-             }
+               ),
+             ],
+           ),
+         ),
+             /*
+             Positioned(
+               top : 0,
+               left: 0,
+               right: 0,
+               child: BlocBuilder<InitScreenBloc, InitScreenState>(
+                 builder: (context, state) {
+                   double maxvalue = 0;
 
-             return const SizedBox(
-               height: 0.0,
-               width: 0.0,
-             );
-           },
-           buildWhen: (previous, current) =>
-           current is InitScreenTools ||
-               current
-               is DisconnectBluetoothDeviceInitScreenState,
-         ),*/
-     );
+                   if (state is InitScreenTools) {
+                     speed = state.speed;
+                     zoom = state.zoom;
+                     scale = state.scale;
+                     baselineX = state.baselineX;
+                     maxvalue = state.silverMax;
+                     file = state.file;
+                     loaded = state.loaded;
+                   }
+                   baselineX ??= 0;
+                   speed ??= 25;
+                   zoom ??= 1;
+                   if (file && loaded) {
+                     return Tooltip(
+                       message:
+                       I18n.translate("horizontalAlignment"),
+                       child: Slider(
+                         onChanged: (value) {
+                           BlocProvider.of<InitScreenBloc>(context)
+                               .add(ChangeBaselineXInitScreen(
+                               baselineX: (value)));
+                         },
+                         value: baselineX!,
+                         min: 0,
+                         max: maxvalue,
+                       ),
+                     );
+                   }
+
+                   return Container(
+                     height: 0.0,
+                   );
+                 },
+                 buildWhen: (previous, current) =>
+                 current is InitScreenTools,
+               ),
+             ),
+             Positioned(
+               bottom: 0,
+               left: 0,
+               child: Container(
+                 width: 20.w,
+                 padding: EdgeInsets.only(
+                   left: 2.dp,
+                 ),
+                 decoration: BoxDecoration(
+                   color: MyColors.RedL,
+                   borderRadius: BorderRadius.circular(5.dp),
+                 ),
+                 child:
+                 BlocBuilder<InitScreenBloc, InitScreenState>(
+                   builder: (context, state) {
+                     if (state is InitScreenTools) {
+                       file = state.file;
+                       resultAr = state.result;
+                     }
+
+                     return Text(
+                       resultAr != null
+                           ? "${I18n.translate("project")}: ${resultAr!.nameFile}"
+                           : "${I18n.translate("project")}: ${I18n.translate("noLoaded")}",
+                       overflow: TextOverflow.ellipsis,
+                       maxLines: 2,
+                       style: TextStyle(
+                         color: Colors.white,
+                         fontWeight: FontWeight.bold,
+                         fontSize: 10.dp,
+                       ),
+                     );
+                   },
+                   buildWhen: (previous, current) =>
+                   current is InitScreenTools,
+                 ),
+               ),
+             ),
+             Positioned(
+               bottom: 0,
+               right: 0,
+               child: Container(
+                 //padding: EdgeInsets.all(5.dp),
+                 alignment: Alignment.bottomRight,
+                 decoration: const BoxDecoration(
+                   color: Colors.transparent,
+                   //borderRadius: BorderRadius.circular(5.dp),
+                 ),
+                 child:
+                 BlocBuilder<InitScreenBloc, InitScreenState>(
+                   builder: (context, state) {
+                     String scaleText = "";
+                     String speedText = "";
+                     if (state is InitScreenTools) {
+                       scale = state.scale;
+                       speed = state.speed;
+                       file = state.file;
+                       resultAr = state.result;
+                     }
+                     if (scale == 10.0) {
+                       scaleText = '10';
+                     } else if (scale == 20.0) {
+                       scaleText = '20';
+                     } else if (scale == 30.0) {
+                       scaleText = '30';
+                     } else if (scale == 2.0) {
+                       scaleText = '2';
+                     } else if (scale == 2.5) {
+                       scaleText = '2.5';
+                     } else if (scale == 5.0) {
+                       scaleText = '5';
+                     }
+
+                     if (speed == 25.0) {
+                       speedText = '25';
+                     } else if (speed == 30.0) {
+                       speedText = '30';
+                     } else if (speed == 50.0) {
+                       speedText = '50';
+                     } else if (speed == 20.0) {
+                       speedText = '20';
+                     }
+
+                     return Column(
+                       children: [
+                         Container(
+                           padding: EdgeInsets.all(5.dp),
+                           decoration: BoxDecoration(
+                             color: MyColors.RedL,
+                             borderRadius:
+                             BorderRadius.circular(5.dp),
+                           ),
+                           child: Text(
+                             '${I18n.translate("ecgSignal")} \t ${I18n.translate("scale")}: $scaleText div/mV \t ${I18n.translate("speed")}: $speedText div/s',
+                             style: TextStyle(
+                               color: Colors.white,
+                               fontWeight: FontWeight.bold,
+                               fontSize: 12.dp,
+                             ),
+                           ),
+                         ),
+                       ],
+                     );
+                   },
+                   buildWhen: (previous, current) =>
+                   current is InitScreenTools,
+                 ),
+               ),
+             ),
+             BlocBuilder<InitScreenBloc, InitScreenState>(
+               builder: (context, state) {
+                 double maxvalue = 0;
+                 if (state is InitScreenTools) {
+                   maxvalue = state.silverMax;
+                   baselineX = state.baselineX;
+                   resultAr = state.result;
+                   loaded = state.loaded;
+                 }
+                 baselineX ??= 0;
+                 if (baselineX! < maxvalue * 0.1 &&
+                     resultAr != null &&
+                     loaded) {
+                   if (resultAr!.isStarted) {
+                     return Positioned(
+                       left: 0,
+                       top: 60.dp,
+                       child: Tooltip(
+                         message: I18n.translate("previousSignal"),
+                         waitDuration: const Duration(seconds: 1),
+                         child: Container(
+                           decoration: BoxDecoration(
+                             color: MyColors.RedL,
+                             borderRadius:
+                             BorderRadius.circular(5.dp),
+                           ),
+                           padding: EdgeInsets.all(5.dp),
+                           child: IconButton(
+                             icon: Icon(
+                               Icons.arrow_back_ios,
+                               color: Colors.white,
+                               size: 20.dp,
+                             ),
+                             onPressed: () {
+                               BlocProvider.of<InitScreenBloc>(
+                                   context)
+                                   .add(
+                                   PreviousECGDataInitScreen());
+                             },
+                           ),
+                         ),
+                       ),
+                     );
+                   } else {
+                     return const SizedBox(
+                       height: 0.0,
+                       width: 0.0,
+                     );
+                   }
+                 } else {
+                   return const SizedBox(
+                     height: 0.0,
+                     width: 0.0,
+                   );
+                 }
+               },
+               buildWhen: (previous, current) =>
+               current is InitScreenTools,
+             ),
+             BlocBuilder<InitScreenBloc, InitScreenState>(
+               builder: (context, state) {
+                 double maxvalue = 0;
+                 if (state is InitScreenTools) {
+                   maxvalue = state.silverMax;
+                   baselineX = state.baselineX;
+                   resultAr = state.result;
+                   loaded = state.loaded;
+                 }
+                 baselineX ??= 0;
+                 if (baselineX! > maxvalue * 0.9 &&
+                     resultAr != null &&
+                     loaded) {
+                   if (!resultAr!.isFinished) {
+                     return Positioned(
+                       right: 0,
+                       top: 60.dp,
+                       child: Tooltip(
+                         message: I18n.translate("nextSignal"),
+                         waitDuration: const Duration(seconds: 1),
+                         child: Container(
+                           decoration: BoxDecoration(
+                             color: MyColors.RedL,
+                             borderRadius:
+                             BorderRadius.circular(5.dp),
+                           ),
+                           padding: EdgeInsets.all(5.dp),
+                           child: IconButton(
+                             icon: Icon(
+                               Icons.arrow_forward_ios,
+                               color: Colors.white,
+                               size: 20.dp,
+                             ),
+                             onPressed: () {
+                               BlocProvider.of<InitScreenBloc>(
+                                   context)
+                                   .add(NextECGDataInitScreen());
+                             },
+                           ),
+                         ),
+                       ),
+                     );
+                   } else {
+                     return const SizedBox(
+                       height: 0.0,
+                       width: 0.0,
+                     );
+                   }
+                 } else {
+                   return const SizedBox(
+                     height: 0.0,
+                     width: 0.0,
+                   );
+                 }
+               },
+               buildWhen: (previous, current) =>
+               current is InitScreenTools,
+             ),
+             BlocBuilder<InitScreenBloc, InitScreenState>(
+               builder: (context, state) {
+                 if (state is InitScreenTools) {
+                   file = state.file;
+                   resultAr = state.result;
+                 }
+                 if (state
+                 is DisconnectBluetoothDeviceInitScreenState) {
+                   file = true;
+                 }
+                 if (file == false) {
+                   return Positioned(
+                     top: 5.dp,
+                     right: 5.dp,
+                     child: Tooltip(
+                       message: I18n.translate("disconnect"),
+                       waitDuration: const Duration(seconds: 1),
+                       child: IconButton(
+                         style: ButtonStyle(
+                           backgroundColor:
+                           MaterialStateProperty.all<Color>(
+                               MyColors.RedL),
+                           // set circular button shape
+                           shape: MaterialStateProperty.all<
+                               RoundedRectangleBorder>(
+                               RoundedRectangleBorder(
+                                 borderRadius:
+                                 BorderRadius.circular(10.dp),
+                               )),
+                         ),
+                         onPressed: () {
+                           BlocProvider.of<InitScreenBloc>(context)
+                               .add(
+                               DisconnectBluetoothDeviceInitScreen());
+                         },
+                         icon: Icon(
+                           Icons.bluetooth_connected,
+                           color: MyColors.grayL,
+                           size: 22.dp,
+                         ),
+                       ),
+                     ),
+                   );
+                 }
+
+                 return const SizedBox(
+                   height: 0.0,
+                   width: 0.0,
+                 );
+               },
+               buildWhen: (previous, current) =>
+               current is InitScreenTools ||
+                   current
+                   is DisconnectBluetoothDeviceInitScreenState,
+             ),*/
+         ),
+     Align(
+       alignment: Alignment.bottomCenter,
+       child: IconButton(
+           onPressed: (){},
+           icon:Icon(Icons.keyboard_arrow_up_rounded,
+             size: 30,
+           )
+       ),
+     )
+   ],
+ );
   }
 
 }

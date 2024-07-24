@@ -17,21 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
     I18n.setLocale(Locale(defaultLocale.languageCode));
     return Scaffold(
       backgroundColor: Colors.white,
-      body:Stack(
-        children: [
-          Ecgchart(),
-          Align(
-            alignment: Alignment.bottomCenter,
-              child: IconButton(
-                onPressed: (){},
-                 icon:Icon(Icons.keyboard_arrow_up_rounded,
-                 size: 30,
-                 )
-              ),
-          ),
-        ],
-      )
-
+      body: Ecgchart(),
     );
   }
 }
