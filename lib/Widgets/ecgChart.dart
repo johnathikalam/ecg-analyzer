@@ -24,6 +24,8 @@ class _EcgchartState extends State<Ecgchart> {
   bool _isLoaded = false;
   //List<double>? ecgData;
   List<double>? normalizedData;
+  OverlayEntry? overlayEntry;
+  double _currentSliderValue = 30;
 
 
   @override
@@ -72,8 +74,24 @@ class _EcgchartState extends State<Ecgchart> {
 
     return data;
   }
-
-
+  double scale =10;
+  double speed = 20;
+  double zoom = 1;
+  double baselineX = 0;
+  double baselineY = 0.0;
+  FlSpot? initSpot;
+  FlSpot? endSpot;
+  ResetRulePointInitScreen(){
+    setState(() {
+      scale = 10;
+      speed = 25;
+      zoom = 0.5;
+      baselineX = 0.0;
+      baselineY = 0.0;
+      initSpot = null;
+      endSpot = null;
+    });
+  }
   @override
   Widget build(BuildContext context) {
 
@@ -83,11 +101,7 @@ class _EcgchartState extends State<Ecgchart> {
     //     : normalizedData;
 
     //List<double>? filterData = filteredData;
-    double scale =10;
-    double speed = 20;
-    double zoom = 1;
-    double baselineX = 0;
-    double baselineY = 0;
+
     // List<double> ecgShow = [];
     // for (int i = 0; i < ecgData!.length; i++) {
     //   ecgShow.add(ecgData![i] * scale!);
@@ -96,26 +110,17 @@ class _EcgchartState extends State<Ecgchart> {
     // for (int i = 0; i < filterData!.length; i++) {
     //   filterShow.add(filterData![i] * scale!);
     // }
-    FlSpot? initSpot;
-    FlSpot? endSpot;
+
      initSpot = initSpot != null
-        ? FlSpot(initSpot.x * (0.004) * speed!,
-        initSpot.y * scale!)
+        ? FlSpot(initSpot!.x * (0.004) * speed!,
+        initSpot!.y * scale!)
         : null;
     endSpot = endSpot != null
-        ? FlSpot(endSpot.x * (0.004) * speed!,
-        endSpot.y * scale!)
+        ? FlSpot(endSpot!.x * (0.004) * speed!,
+        endSpot!.y * scale!)
         : null;
 
-    ResetRulePointInitScreen(){
-      scale = 10;
-      speed = 25;
-      zoom = 1;
-      baselineX = 0.0;
-      baselineY = 0.0;
-      initSpot;
-      endSpot;
-    }
+
  return _isLoaded ?
  Center(child: CircularProgressIndicator()):
  Stack(
@@ -206,12 +211,12 @@ class _EcgchartState extends State<Ecgchart> {
                                initSpot != null &&
                                endSpot != null) {
                              double init =
-                             ((initSpot.x) / speed!);
+                             ((initSpot!.x) / speed!);
                              double end =
-                             ((endSpot.x) / speed!);
+                             ((endSpot!.x) / speed!);
                              double initY =
-                                 initSpot.y / scale!;
-                             double endY = endSpot.y / scale!;
+                                 initSpot!.y / scale!;
+                             double endY = endSpot!.y / scale!;
                              return [
                                LineTooltipItem(
                                    '${I18n.translate("timeDifference")}: ${((end - init).abs()).toStringAsFixed(3)} s\n${I18n.translate("voltageDifference")}: ${((endY - initY).abs()).toStringAsFixed(2)} mV',
@@ -391,8 +396,8 @@ class _EcgchartState extends State<Ecgchart> {
                      // maxX: ((80) * zoom! + baselineX!),
                      maxY: 0.1,
                      minY: 1,
-                     minX: (0) + baselineX!,
-                     maxX: ((80) * zoom! + baselineX!),
+                     minX: (0) + baselineX,
+                     maxX: ((80) * zoom + baselineX),
                      clipData: FlClipData.all(),
                    ),
                  ),
@@ -400,352 +405,45 @@ class _EcgchartState extends State<Ecgchart> {
              ],
            ),
          ),
-             /*
-             Positioned(
-               top : 0,
-               left: 0,
-               right: 0,
-               child: BlocBuilder<InitScreenBloc, InitScreenState>(
-                 builder: (context, state) {
-                   double maxvalue = 0;
-
-                   if (state is InitScreenTools) {
-                     speed = state.speed;
-                     zoom = state.zoom;
-                     scale = state.scale;
-                     baselineX = state.baselineX;
-                     maxvalue = state.silverMax;
-                     file = state.file;
-                     loaded = state.loaded;
-                   }
-                   baselineX ??= 0;
-                   speed ??= 25;
-                   zoom ??= 1;
-                   if (file && loaded) {
-                     return Tooltip(
-                       message:
-                       I18n.translate("horizontalAlignment"),
-                       child: Slider(
-                         onChanged: (value) {
-                           BlocProvider.of<InitScreenBloc>(context)
-                               .add(ChangeBaselineXInitScreen(
-                               baselineX: (value)));
-                         },
-                         value: baselineX!,
-                         min: 0,
-                         max: maxvalue,
-                       ),
-                     );
-                   }
-
-                   return Container(
-                     height: 0.0,
-                   );
-                 },
-                 buildWhen: (previous, current) =>
-                 current is InitScreenTools,
-               ),
-             ),
-             Positioned(
-               bottom: 0,
-               left: 0,
-               child: Container(
-                 width: 20.w,
-                 padding: EdgeInsets.only(
-                   left: 2.dp,
-                 ),
-                 decoration: BoxDecoration(
-                   color: MyColors.RedL,
-                   borderRadius: BorderRadius.circular(5.dp),
-                 ),
-                 child:
-                 BlocBuilder<InitScreenBloc, InitScreenState>(
-                   builder: (context, state) {
-                     if (state is InitScreenTools) {
-                       file = state.file;
-                       resultAr = state.result;
-                     }
-
-                     return Text(
-                       resultAr != null
-                           ? "${I18n.translate("project")}: ${resultAr!.nameFile}"
-                           : "${I18n.translate("project")}: ${I18n.translate("noLoaded")}",
-                       overflow: TextOverflow.ellipsis,
-                       maxLines: 2,
-                       style: TextStyle(
-                         color: Colors.white,
-                         fontWeight: FontWeight.bold,
-                         fontSize: 10.dp,
-                       ),
-                     );
-                   },
-                   buildWhen: (previous, current) =>
-                   current is InitScreenTools,
-                 ),
-               ),
-             ),
-             Positioned(
-               bottom: 0,
-               right: 0,
-               child: Container(
-                 //padding: EdgeInsets.all(5.dp),
-                 alignment: Alignment.bottomRight,
-                 decoration: const BoxDecoration(
-                   color: Colors.transparent,
-                   //borderRadius: BorderRadius.circular(5.dp),
-                 ),
-                 child:
-                 BlocBuilder<InitScreenBloc, InitScreenState>(
-                   builder: (context, state) {
-                     String scaleText = "";
-                     String speedText = "";
-                     if (state is InitScreenTools) {
-                       scale = state.scale;
-                       speed = state.speed;
-                       file = state.file;
-                       resultAr = state.result;
-                     }
-                     if (scale == 10.0) {
-                       scaleText = '10';
-                     } else if (scale == 20.0) {
-                       scaleText = '20';
-                     } else if (scale == 30.0) {
-                       scaleText = '30';
-                     } else if (scale == 2.0) {
-                       scaleText = '2';
-                     } else if (scale == 2.5) {
-                       scaleText = '2.5';
-                     } else if (scale == 5.0) {
-                       scaleText = '5';
-                     }
-
-                     if (speed == 25.0) {
-                       speedText = '25';
-                     } else if (speed == 30.0) {
-                       speedText = '30';
-                     } else if (speed == 50.0) {
-                       speedText = '50';
-                     } else if (speed == 20.0) {
-                       speedText = '20';
-                     }
-
-                     return Column(
-                       children: [
-                         Container(
-                           padding: EdgeInsets.all(5.dp),
-                           decoration: BoxDecoration(
-                             color: MyColors.RedL,
-                             borderRadius:
-                             BorderRadius.circular(5.dp),
-                           ),
-                           child: Text(
-                             '${I18n.translate("ecgSignal")} \t ${I18n.translate("scale")}: $scaleText div/mV \t ${I18n.translate("speed")}: $speedText div/s',
-                             style: TextStyle(
-                               color: Colors.white,
-                               fontWeight: FontWeight.bold,
-                               fontSize: 12.dp,
-                             ),
-                           ),
-                         ),
-                       ],
-                     );
-                   },
-                   buildWhen: (previous, current) =>
-                   current is InitScreenTools,
-                 ),
-               ),
-             ),
-             BlocBuilder<InitScreenBloc, InitScreenState>(
-               builder: (context, state) {
-                 double maxvalue = 0;
-                 if (state is InitScreenTools) {
-                   maxvalue = state.silverMax;
-                   baselineX = state.baselineX;
-                   resultAr = state.result;
-                   loaded = state.loaded;
-                 }
-                 baselineX ??= 0;
-                 if (baselineX! < maxvalue * 0.1 &&
-                     resultAr != null &&
-                     loaded) {
-                   if (resultAr!.isStarted) {
-                     return Positioned(
-                       left: 0,
-                       top: 60.dp,
-                       child: Tooltip(
-                         message: I18n.translate("previousSignal"),
-                         waitDuration: const Duration(seconds: 1),
-                         child: Container(
-                           decoration: BoxDecoration(
-                             color: MyColors.RedL,
-                             borderRadius:
-                             BorderRadius.circular(5.dp),
-                           ),
-                           padding: EdgeInsets.all(5.dp),
-                           child: IconButton(
-                             icon: Icon(
-                               Icons.arrow_back_ios,
-                               color: Colors.white,
-                               size: 20.dp,
-                             ),
-                             onPressed: () {
-                               BlocProvider.of<InitScreenBloc>(
-                                   context)
-                                   .add(
-                                   PreviousECGDataInitScreen());
-                             },
-                           ),
-                         ),
-                       ),
-                     );
-                   } else {
-                     return const SizedBox(
-                       height: 0.0,
-                       width: 0.0,
-                     );
-                   }
-                 } else {
-                   return const SizedBox(
-                     height: 0.0,
-                     width: 0.0,
-                   );
-                 }
-               },
-               buildWhen: (previous, current) =>
-               current is InitScreenTools,
-             ),
-             BlocBuilder<InitScreenBloc, InitScreenState>(
-               builder: (context, state) {
-                 double maxvalue = 0;
-                 if (state is InitScreenTools) {
-                   maxvalue = state.silverMax;
-                   baselineX = state.baselineX;
-                   resultAr = state.result;
-                   loaded = state.loaded;
-                 }
-                 baselineX ??= 0;
-                 if (baselineX! > maxvalue * 0.9 &&
-                     resultAr != null &&
-                     loaded) {
-                   if (!resultAr!.isFinished) {
-                     return Positioned(
-                       right: 0,
-                       top: 60.dp,
-                       child: Tooltip(
-                         message: I18n.translate("nextSignal"),
-                         waitDuration: const Duration(seconds: 1),
-                         child: Container(
-                           decoration: BoxDecoration(
-                             color: MyColors.RedL,
-                             borderRadius:
-                             BorderRadius.circular(5.dp),
-                           ),
-                           padding: EdgeInsets.all(5.dp),
-                           child: IconButton(
-                             icon: Icon(
-                               Icons.arrow_forward_ios,
-                               color: Colors.white,
-                               size: 20.dp,
-                             ),
-                             onPressed: () {
-                               BlocProvider.of<InitScreenBloc>(
-                                   context)
-                                   .add(NextECGDataInitScreen());
-                             },
-                           ),
-                         ),
-                       ),
-                     );
-                   } else {
-                     return const SizedBox(
-                       height: 0.0,
-                       width: 0.0,
-                     );
-                   }
-                 } else {
-                   return const SizedBox(
-                     height: 0.0,
-                     width: 0.0,
-                   );
-                 }
-               },
-               buildWhen: (previous, current) =>
-               current is InitScreenTools,
-             ),
-             BlocBuilder<InitScreenBloc, InitScreenState>(
-               builder: (context, state) {
-                 if (state is InitScreenTools) {
-                   file = state.file;
-                   resultAr = state.result;
-                 }
-                 if (state
-                 is DisconnectBluetoothDeviceInitScreenState) {
-                   file = true;
-                 }
-                 if (file == false) {
-                   return Positioned(
-                     top: 5.dp,
-                     right: 5.dp,
-                     child: Tooltip(
-                       message: I18n.translate("disconnect"),
-                       waitDuration: const Duration(seconds: 1),
-                       child: IconButton(
-                         style: ButtonStyle(
-                           backgroundColor:
-                           MaterialStateProperty.all<Color>(
-                               MyColors.RedL),
-                           // set circular button shape
-                           shape: MaterialStateProperty.all<
-                               RoundedRectangleBorder>(
-                               RoundedRectangleBorder(
-                                 borderRadius:
-                                 BorderRadius.circular(10.dp),
-                               )),
-                         ),
-                         onPressed: () {
-                           BlocProvider.of<InitScreenBloc>(context)
-                               .add(
-                               DisconnectBluetoothDeviceInitScreen());
-                         },
-                         icon: Icon(
-                           Icons.bluetooth_connected,
-                           color: MyColors.grayL,
-                           size: 22.dp,
-                         ),
-                       ),
-                     ),
-                   );
-                 }
-
-                 return const SizedBox(
-                   height: 0.0,
-                   width: 0.0,
-                 );
-               },
-               buildWhen: (previous, current) =>
-               current is InitScreenTools ||
-                   current
-                   is DisconnectBluetoothDeviceInitScreenState,
-             ),*/
          ),
      Align(
        alignment: Alignment.bottomCenter,
-       child: GestureDetector(
-         onTap:(){},
-         child: Container(
-           padding: EdgeInsets.symmetric(horizontal: 15),
-           decoration: BoxDecoration(
-             borderRadius: BorderRadius.circular(10),
-             color:Colors.grey.withOpacity(.3)
+       child: Container(
+         height: 40,
+         width:500,
+         padding: EdgeInsets.symmetric(horizontal: 35),
+         decoration: BoxDecoration(
+           borderRadius: BorderRadius.circular(10),
+           color:Colors.grey.withOpacity(.3)
+         ),
+           child:Row(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               SizedBox(
+                 width:400,
+                 child: Slider(
+                   value: _currentSliderValue,
+                   max: 60,
+                   min:0,
+                   onChanged: (value) {
+                     setState(() {
+                       zoom = value*.1;
+                       // print('$zoom, $value');
+                       _currentSliderValue = value;
+                     });
+                   },
+                 ),
+               ),
+               // IconButton(onPressed: (){
+               //   ResetRulePointInitScreen();
+               //   print(zoom);
+               // }, icon: Icon(Icons.restart_alt_rounded,color: Colors.grey,))
+             ],
            ),
-             child: Icon(Icons.keyboard_arrow_up_rounded, size: 30,)),
+           // Icon(Icons.keyboard_arrow_up_rounded, size: 30,)
        )
      )
    ],
  );
   }
-
 }
-
-
-
