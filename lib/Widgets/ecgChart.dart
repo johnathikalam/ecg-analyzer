@@ -93,7 +93,7 @@ class _EcgchartState extends State<Ecgchart> {
       baselineY = 0.0;
       initSpot = null;
       endSpot = null;
-      _currentSliderV = 30;
+      _currentSliderV = 10;
       _currentSliderH = 20;
     });
   }
@@ -413,50 +413,86 @@ class _EcgchartState extends State<Ecgchart> {
          ),
      Align(
        alignment: Alignment.bottomCenter,
-       child: Container(
-         height: 40,
-         width:500,
-         padding: EdgeInsets.symmetric(horizontal: 35),
-         decoration: BoxDecoration(
-           borderRadius: BorderRadius.circular(10),
-           color:Colors.grey.withOpacity(.3)
-         ),
-           child:Row(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               SizedBox(
+       child: Row(
+         mainAxisAlignment: MainAxisAlignment.center,
+         children: [
+           Container(
+             height: 40,
+             width:500,
+             padding: EdgeInsets.symmetric(horizontal: 35),
+             decoration: BoxDecoration(
+               borderRadius: BorderRadius.circular(10),
+               color:Colors.grey.withOpacity(.3)
+             ),
+               child:SizedBox(
                  width:400,
+                 // child: Slider(
+                 //   value: _currentSliderV,
+                 //   max: 60,
+                 //   min:0,
+                 //   onChanged: (value) {
+                 //     setState(() {
+                 //       zoomH = value*.1;
+                 //       _currentSliderV = value;
+                 //     });
+                 //   },
+                 // ),
                  child: Slider(
                    value: _currentSliderV,
-                   max: 60,
+                   max: 50,
                    min:0,
                    onChanged: (value) {
                      setState(() {
-                       zoomH = value*.1;
+                       baselineX = value*5;
                        _currentSliderV = value;
                      });
                    },
                  ),
                ),
-               // IconButton(onPressed: (){
-               //   ResetRulePointInitScreen();
-               //   print(zoomH);
-               // }, icon: Icon(Icons.restart_alt_rounded,color: Colors.grey,))
-             ],
+               // Icon(Icons.keyboard_arrow_up_rounded, size: 30,)
            ),
-           // Icon(Icons.keyboard_arrow_up_rounded, size: 30,)
+           SizedBox(width: 10,),
+           Row(
+               children:[
+                 Container(
+                     decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(15),
+                         color:Colors.grey.withOpacity(.3)
+                     ),
+                     child: TextButton(onPressed: (){
+                       setState(() {
+                         speed = speed > 120 ? 120 : speed + 5;
+                         print(speed);
+                       });
+                     },
+                       child: Text("+",style:TextStyle(fontSize: 25,fontWeight: FontWeight.w900)),)),
+                 SizedBox(width: 5,),
+                 Container(
+                     decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(15),
+                         color:Colors.grey.withOpacity(.3)
+                     ),
+                     child: TextButton(onPressed: (){
+                       setState(() {
+                         speed = speed < 10 ? 10 : speed - 5;
+                         print(speed);
+                       });
+                     },
+                       child: Text("—",style:TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),)),
+                 SizedBox(width: 5,),
+                 Container(
+                     decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(15),
+                         color:Colors.grey.withOpacity(.3)
+                     ),
+                     child: IconButton(onPressed: (){
+                       ResetRulePointInitScreen();
+                     }, icon: Icon(Icons.restart_alt_rounded,color: Colors.blue, size: 35,)),),
+               ]
+           )
+         ],
        )
      ),
-Align(
-  alignment: Alignment.topRight,
-  child:RotatedBox(
-    quarterTurns: 3,
-    child:IconButton(onPressed: (){
-      ResetRulePointInitScreen();
-    }, icon: Icon(Icons.restart_alt_rounded,color: Colors.black87, size: 30,)),
-
-  )
-),
      Align(
          alignment: Alignment.centerRight,
          child: RotatedBox(
