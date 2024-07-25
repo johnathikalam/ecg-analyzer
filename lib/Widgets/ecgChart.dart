@@ -25,7 +25,8 @@ class _EcgchartState extends State<Ecgchart> {
   //List<double>? ecgData;
   List<double>? normalizedData;
   OverlayEntry? overlayEntry;
-  double _currentSliderValue = 30;
+  double _currentSliderV = 30;
+  double _currentSliderH = 20;
 
 
   @override
@@ -76,7 +77,8 @@ class _EcgchartState extends State<Ecgchart> {
   }
   double scale =10;
   double speed = 20;
-  double zoom = 1;
+  double zoomH = 1;
+  double zoomV = 1;
   double baselineX = 0;
   double baselineY = 0.0;
   FlSpot? initSpot;
@@ -84,12 +86,15 @@ class _EcgchartState extends State<Ecgchart> {
   ResetRulePointInitScreen(){
     setState(() {
       scale = 10;
-      speed = 25;
-      zoom = 0.5;
+      speed = 20;
+      zoomH = 1;
+      zoomV = 1;
       baselineX = 0.0;
       baselineY = 0.0;
       initSpot = null;
       endSpot = null;
+      _currentSliderV = 30;
+      _currentSliderH = 20;
     });
   }
   @override
@@ -390,14 +395,14 @@ class _EcgchartState extends State<Ecgchart> {
                          width: 1,
                        ),
                      ),
-                     // maxY: 30 * zoom! + baselineY!,
-                     // minY: -30 * zoom! + baselineY!,
+                     // maxY: 30 * zoomH! + baselineY!,
+                     // minY: -30 * zoomH! + baselineY!,
                      // minX: (0) + baselineX!,
-                     // maxX: ((80) * zoom! + baselineX!),
-                     maxY: 0.1,
-                     minY: 1,
+                     // maxX: ((80) * zoomH! + baselineX!),
+                     maxY: 0.1 * zoomV! + baselineY!,
+                     minY: 1 * zoomV! + baselineY!,
                      minX: (0) + baselineX,
-                     maxX: ((80) * zoom + baselineX),
+                     maxX: ((80) * zoomH + baselineX),
                      clipData: FlClipData.all(),
                    ),
                  ),
@@ -422,26 +427,71 @@ class _EcgchartState extends State<Ecgchart> {
                SizedBox(
                  width:400,
                  child: Slider(
-                   value: _currentSliderValue,
+                   value: _currentSliderV,
                    max: 60,
                    min:0,
                    onChanged: (value) {
                      setState(() {
-                       zoom = value*.1;
-                       // print('$zoom, $value');
-                       _currentSliderValue = value;
+                       zoomH = value*.1;
+                       _currentSliderV = value;
                      });
                    },
                  ),
                ),
                // IconButton(onPressed: (){
                //   ResetRulePointInitScreen();
-               //   print(zoom);
+               //   print(zoomH);
                // }, icon: Icon(Icons.restart_alt_rounded,color: Colors.grey,))
              ],
            ),
            // Icon(Icons.keyboard_arrow_up_rounded, size: 30,)
        )
+     ),
+Align(
+  alignment: Alignment.topRight,
+  child:RotatedBox(
+    quarterTurns: 3,
+    child:IconButton(onPressed: (){
+      ResetRulePointInitScreen();
+    }, icon: Icon(Icons.restart_alt_rounded,color: Colors.black87, size: 30,)),
+
+  )
+),
+     Align(
+         alignment: Alignment.centerRight,
+         child: RotatedBox(
+           quarterTurns: 3,
+           child: Container(
+             margin: EdgeInsets.symmetric(vertical: 3),
+             height: 40,
+             width:300,
+             padding: EdgeInsets.symmetric(horizontal: 8),
+             decoration: BoxDecoration(
+                 borderRadius: BorderRadius.circular(10),
+                 color:Colors.grey.withOpacity(.3)
+             ),
+             child:Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 SizedBox(
+                   width:250,
+                   child: Slider(
+                     value: _currentSliderH,
+                     max: 40,
+                     min:0,
+                     onChanged: (value) {
+                       setState(() {
+                         baselineY = value*.01;
+                         _currentSliderH = value;
+                       });
+                     },
+                   ),
+                 ),
+               ],
+             ),
+             // Icon(Icons.keyboard_arrow_up_rounded, size: 30,)
+           ),
+         )
      )
    ],
  );
