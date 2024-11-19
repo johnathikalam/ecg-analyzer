@@ -60,7 +60,7 @@ class Prediction {
   }
 
   List<List<String>> getClassLabels(List<List<double>> predictions) {
-    List<String> classLabels = ['CD', 'HYP', 'MI', 'NORM', 'STTC'];
+    List<String> classLabels = ['Conduction Disturbance', 'Hypertrophy', 'Myocardial Infarction', 'Normal ECG', 'ST/T Change'];
     List<List<String>> results = [];
 
     for (var prediction in predictions) {
