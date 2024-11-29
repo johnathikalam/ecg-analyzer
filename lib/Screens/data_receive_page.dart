@@ -168,6 +168,7 @@ class _ChatPageState extends State<ChatPage> {
       }
     }
     else{
+      dispose();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DataPlot(data)));
     }
   }

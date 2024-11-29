@@ -6,6 +6,7 @@ import 'package:flutter_bluetooth_serial_ble/flutter_bluetooth_serial_ble.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../Services/BackgroundCollectingTask.dart';
+import '../Services/prediction.dart';
 import 'connected_devices_screen.dart';
 import 'image_screen.dart';
 
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
   List<String> signalFiles = ['0','1','2','3','4','5','6','7','8','9','10'];
   String? _selectedLocation;
+
 
 
   @override
@@ -75,120 +77,118 @@ class _HomeScreenState extends State<HomeScreen> {
     return  Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: SizedBox(
-          width:350,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(child: Text("Select Signal Type",style: GoogleFonts.kanit(fontSize: 19),)),
+      child: SizedBox(
+        width:350,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(child: Text("Select Signal Type",style: GoogleFonts.kanit(fontSize: 19),)),
 
-                Image.asset("assets/logo/logo.png",height: 120,),
+              Image.asset("assets/logo/logo.png",height: 120,),
 
-                GestureDetector(
-                  onTap: (){
-                    if (kDebugMode) {
-                      print('Image');
-                    }
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ImageScreen()));
-                  },
-            
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(.15),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.add_photo_alternate_outlined),
-                          const SizedBox(width: 10,),
-                          Text("Add Image",style : GoogleFonts.kanit(fontSize: 16)),
-                        ],
-                      )),
-                ),
+              GestureDetector(
+                onTap: (){
+                  if (kDebugMode) {
+                    print('Image');
+                  }
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ImageScreen()));
+                },
 
-                const SizedBox(height: 20,),
-            
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(.15),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Center(
-                    child: DropdownButton<String>(
-                      hint: Text('Select File',style: GoogleFonts.kanit(color: Colors.black),),
-                      value: _selectedLocation,
-                      onChanged: (String? newValue) async {
-                        setState(() {
-                          _selectedLocation = newValue;
-                        });
-                        // List<double> normalizedData = await dataRead.loadEcgData(_selectedLocation!);
-                        // print(normalizedData);
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GraphScreen(_selectedLocation!)));
-                      },
-                      items: signalFiles.map((String signal) {
-                        return DropdownMenuItem<String>(
-                          value: signal,
-                          child: Text('ECG signal ${signal}'),
-                        );
-                      }).toList(),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(.15),
+                      borderRadius: BorderRadius.circular(15),
                     ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add_photo_alternate_outlined),
+                        const SizedBox(width: 10,),
+                        Text("Add Image",style : GoogleFonts.kanit(fontSize: 16)),
+                      ],
+                    )),
+              ),
+
+              const SizedBox(height: 20,),
+
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(.15),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Center(
+                  child: DropdownButton<String>(
+                    hint: Text('Select File',style: GoogleFonts.kanit(color: Colors.black),),
+                    value: _selectedLocation,
+                    onChanged: (String? newValue) async {
+                      setState(() {
+                        _selectedLocation = newValue;
+                      });
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GraphScreen(_selectedLocation!)));
+                    },
+                    items: signalFiles.map((String signal) {
+                      return DropdownMenuItem<String>(
+                        value: signal,
+                        child: Text('ECG signal ${signal}'),
+                      );
+                    }).toList(),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 20,),
+              const SizedBox(height: 20,),
 
-                GestureDetector(
-                  onTap: () async {
-                    if (_bluetoothState.isEnabled) {
-                      print("Bluetooth is enabled");
-                      // Navigator.push(context, MaterialPageRoute(builder: (context) => SelectBondedDevicePage()));
-                      final BluetoothDevice? selectedDevice =
-                          await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return SelectBondedDevicePage(checkAvailability: false);
-                          },
-                        ),
-                      );
-                      if (selectedDevice != null) {
-                        print('Connect -> selected ' + selectedDevice.address);
-                        _startChat(context, selectedDevice);
-                      } else {
-                        print('Connect -> no device selected');
-                      }
-                    } else {
-                      showBluetoothSnackBar();
-                    }
-                  },
-
-                  child:
-                  Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(.15),
-                        borderRadius: BorderRadius.circular(15),
+              GestureDetector(
+                onTap: () async {
+                  if (_bluetoothState.isEnabled) {
+                    print("Bluetooth is enabled");
+                    // Navigator.push(context, MaterialPageRoute(builder: (context) => SelectBondedDevicePage()));
+                    final BluetoothDevice? selectedDevice =
+                        await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return SelectBondedDevicePage(checkAvailability: false);
+                        },
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.monitor_heart_outlined),
-                          const SizedBox(width: 10,),
-                          Text("Live Signal",style : GoogleFonts.kanit(fontSize: 16)),
-                        ],
-                      )),
-                ),
-              ],
-            ),
+                    );
+                    if (selectedDevice != null) {
+                      print('Connect -> selected ' + selectedDevice.address);
+                      _startChat(context, selectedDevice);
+                    } else {
+                      print('Connect -> no device selected');
+                    }
+                  } else {
+                    showBluetoothSnackBar();
+                  }
+                },
+
+                child:
+                Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(.15),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.monitor_heart_outlined),
+                        const SizedBox(width: 10,),
+                        Text("Live Signal",style : GoogleFonts.kanit(fontSize: 16)),
+                      ],
+                    )),
+              ),
+            ],
           ),
         ),
-      )
+      ),
+              )
     );
   }
 

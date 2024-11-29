@@ -171,6 +171,7 @@ class _ImageScreenState extends State<ImageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(title:Center(child:Text("Image Convertor"))),
       body: imageFile == null
           ? Center(
         child: GestureDetector(
