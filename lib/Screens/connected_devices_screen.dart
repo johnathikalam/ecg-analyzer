@@ -34,7 +34,9 @@ class _SelectBondedDevicePageState extends State<SelectBondedDevicePage> {
   Future<void> _fetchBondedDevices() async {
     var bondedDevices = await FlutterBluetoothSerial.instance.getBondedDevices();
     setState(() {
-      devices = bondedDevices.map((device) => DeviceWithAvailability(
+      devices = bondedDevices
+          .where((device) => device.name != null && device.name!.startsWith("ECG"))
+          .map((device) => DeviceWithAvailability(
           device,
           widget.checkAvailability ? DeviceAvailability.maybe : DeviceAvailability.yes))
           .toList();
@@ -91,15 +93,15 @@ class BluetoothDeviceListEntry extends StatelessWidget {
       margin: EdgeInsets.all(10),
       padding: EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(.15),
-        borderRadius: BorderRadius.circular(25)
+          color: Colors.grey.withOpacity(.15),
+          borderRadius: BorderRadius.circular(25)
       ),
       child: ListTile(
         onTap: onTap,
         enabled: enabled,
         leading: const Icon(Icons.devices, color: Colors.black,),
-        title: Text(device.name ?? "Unknown",style: TextStyle(color: Colors.black),),
-        subtitle: Text(device.address.toString(),style: TextStyle(color: Colors.black54)),
+        title: Text(device.name ?? "Unknown", style: TextStyle(color: Colors.black),),
+        subtitle: Text(device.address.toString(), style: TextStyle(color: Colors.black54)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
