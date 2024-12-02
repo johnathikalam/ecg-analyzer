@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bluetooth_serial_ble/flutter_bluetooth_serial_ble.dart';
-
-import 'data_plot.dart';
 
 class ChatPage extends StatefulWidget {
   final BluetoothDevice server;
@@ -33,12 +32,16 @@ class _ChatPageState extends State<ChatPage> {
   String _messageBuffer = '';
   bool startFlag = false;
 
-  final TextEditingController textEditingController =
-  TextEditingController();
+  final TextEditingController textEditingController = TextEditingController();
   final ScrollController listScrollController = ScrollController();
 
   List<double> data = [];
-  double maxVisibleXRange = 1000;
+  List<double> displayData = [];
+  int maxVisibleXRange = 200;
+  int dataPointCounter = 0;
+  int _currentMinX = 0;
+  int _currentMaxX = 200;
+  double sliderValue = 0;
 
   @override
   void initState() {
@@ -90,99 +93,151 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Center(child: const Text('Receiving ECG data'))),
+      appBar: AppBar(title: const Center(child: Text('Receiving ECG Data'))),
       body: Stack(
         children: [
-          startFlag ?
-          Positioned(
-            left: 20,
-            child:
-            IconButton.outlined(
-                icon:  Icon(Icons.pause, color: isConnected ? Colors.red : Colors.grey,),
-                onPressed: () {
-                  _sendMessage("0");
-                  startFlag = false;
-                  print(startFlag);
-                }
+          Column(
+            children: [
+              Divider(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    onHorizontalDragUpdate: (details) {
+                      setState(() {
+                        int dragDirection = details.delta.dx < 0 ? 1 : -1;
+                        // Adjust the factor for sensitivity
+                        _currentMinX += dragDirection * 1;
+                        _currentMaxX += dragDirection * 1;
+
+                        // Clamp the values to the range of the data length
+                        _currentMinX = _currentMinX.clamp(0, data.length - maxVisibleXRange);
+                        _currentMaxX = _currentMaxX.clamp(maxVisibleXRange, data.length);
+                      });
+                    },
+                    child: LineChart(
+                      LineChartData(
+                        maxX: _currentMaxX.toDouble(),
+                        minX: _currentMinX.toDouble(),
+                        minY: 0,
+                        maxY: 1,
+                        lineBarsData: [
+                          LineChartBarData(color: Colors.red,
+                            spots: _createSpots(),
+                            isCurved: false,
+                            dotData: FlDotData(show: false),
+                          ),
+                        ],
+                        borderData: FlBorderData(show: false),
+                        titlesData: const FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-          ) :
-          Positioned(
-            left: 20,
-            child: IconButton.outlined(
-                color: Colors.black,
-                icon:  Icon(Icons.play_arrow,  color: isConnected ? Colors.green : Colors.grey,),
-                onPressed: isConnected ? () => {
-                  _sendMessage("1"),
-                  startFlag = true,
-                  print(startFlag),
-                } : null),
+              ),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  startFlag
+                      ? IconButton(
+                    icon: Icon(Icons.pause, color: isConnected ? Colors.red : Colors.grey),
+                    onPressed: () {
+                      _sendMessage("0");
+                      setState(() {
+                        startFlag = false;
+                      });
+                    },
+                  ) : IconButton(
+                    icon: Icon(Icons.play_arrow, color: isConnected ? Colors.green : Colors.grey),
+                    onPressed: isConnected ? () {
+                      _sendMessage("1");
+                      setState(() {
+                        startFlag = true;
+                      });
+                    }: null,
+                  ),
+
+                  // data.length > 1000 ? ElevatedButton(onPressed: (){_showSelectionDialog();}, child: Text("Submit")): Container(),
+
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10.0),
+                    child: Text("${data.length.toString()} Dp"),
+                  ),
+                ],
+              ),
+              SizedBox(height: 5,),
+            ],
           ),
-          Center(child: Image.asset("assets/logo/heartbeat.gif", height: MediaQuery.of(context).size.height*.8)),
-          Positioned(
-            bottom: 60,
-              left: MediaQuery.of(context).size.width*.47,
-              child: Text('${rate.toString()} %', style: TextStyle(fontSize: 20),)),
         ],
       ),
     );
   }
 
-
   void _onDataReceived(Uint8List data) {
-    // Allocate buffer for parsed data
-    int backspacesCounter = 0;
-    data.forEach((byte) {
-      if (byte == 8 || byte == 127) {
-        backspacesCounter++;
-      }
-    });
-    Uint8List buffer = Uint8List(data.length - backspacesCounter);
-    int bufferIndex = buffer.length;
-
-    // Apply backspace control character
-    backspacesCounter = 0;
-    for (int i = data.length - 1; i >= 0; i--) {
-      if (data[i] == 8 || data[i] == 127) {
-        backspacesCounter++;
-      } else {
-        if (backspacesCounter > 0) {
-          backspacesCounter--;
-        } else {
-          buffer[--bufferIndex] = data[i];
-        }
-      }
-    }
-
-    // Create message if there is new line character
-    String dataString = String.fromCharCodes(buffer);
-    int index = buffer.indexOf(13);
-    if (~index != 0) {
-      String messageText = backspacesCounter > 0
-          ? _messageBuffer.substring(0, _messageBuffer.length - backspacesCounter)
-          : _messageBuffer + dataString.substring(0, index);
-
-      // Parse the message and add to plot
+    String dataString = String.fromCharCodes(data);
+    int index = dataString.indexOf("\r\n");
+    if (index != -1) {
+      String messageText = _messageBuffer + dataString.substring(0, index);
+      _messageBuffer = dataString.substring(index + 2);
       _addDataPoint(messageText);
-
-      setState(() {
-        messages.add(
-          _Message(1, messageText),
-        );
-        _messageBuffer = dataString.substring(index);
-      });
     } else {
-      _messageBuffer = (backspacesCounter > 0
-          ? _messageBuffer.substring(0, _messageBuffer.length - backspacesCounter)
-          : _messageBuffer + dataString);
+      _messageBuffer += dataString;
     }
   }
 
+  void _addDataPoint(String message) {
+    try {
+      double yValue = double.parse(message.trim());
+      setState(() {
+        data.add(yValue / 4000);
+        dataPointCounter++;
+
+        if (data.length > maxVisibleXRange) {
+          if (startFlag) {
+            _currentMinX = data.length - maxVisibleXRange;
+            _currentMaxX = data.length;
+          }
+        }
+
+        if (dataPointCounter >= 5) {
+          dataPointCounter = 0;
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error converting message to double: $e');
+      }
+    }
+  }
+
+  List<FlSpot> _createSpots() {
+    List<FlSpot> spots = [];
+    for (int i = 0; i < data.length; i++) {
+      spots.add(FlSpot(i.toDouble(), data[i]));
+    }
+    return spots;
+  }
 
   void _sendMessage(String text) async {
     text = text.trim();
     textEditingController.clear();
 
-    if (text.length > 0) {
+    if (text.isNotEmpty) {
       try {
         connection!.output.add(Uint8List.fromList(utf8.encode(text + "\r\n")));
         await connection!.output.allSent;
@@ -191,11 +246,12 @@ class _ChatPageState extends State<ChatPage> {
           messages.add(_Message(clientID, text));
         });
 
-        Future.delayed(Duration(milliseconds: 333)).then((_) {
+        Future.delayed(const Duration(milliseconds: 333)).then((_) {
           listScrollController.animateTo(
-              listScrollController.position.maxScrollExtent,
-              duration: Duration(milliseconds: 333),
-              curve: Curves.easeOut);
+            listScrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 333),
+            curve: Curves.easeOut,
+          );
         });
       } catch (e) {
         // Ignore error, but notify state
@@ -205,25 +261,60 @@ class _ChatPageState extends State<ChatPage> {
   }
 
 
-  void _addDataPoint(String message) {
-    if (data.length < maxVisibleXRange) {
-      try {
-        // Convert the received message (string) to a double
-        double yValue = double.parse(message.trim());
 
-        setState(() {
-          data.add(yValue / 4000);
-          rate = data.length/10;
-        });
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error converting message to double: $e');
-        }
-      }
-    }
-    else{
-      dispose();
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DataPlot(data)));
-    }
-  }
+  // void _showSelectionDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: Text("Select 1000 Points Range"),
+  //         content: StatefulBuilder(
+  //           builder: (BuildContext context, StateSetter setState) {
+  //             return Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Slider(
+  //                   value: sliderValue,
+  //                   min: 0,
+  //                   max: (data.length - 1000).toDouble(),
+  //                   divisions: data.length - 1000,
+  //                   label: sliderValue.toInt().toString(),
+  //                   onChanged: (double value) {
+  //                     setState(() {
+  //                       sliderValue = value;
+  //                     });
+  //                   },
+  //                 ),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               int startIndex = sliderValue.toInt();
+  //               List<double> selectedData;
+  //               if (startIndex + 1000 <= data.length) {
+  //                 selectedData = data.sublist(startIndex, startIndex + 1000);
+  //               } else {
+  //                 selectedData = data.sublist(data.length - 1000);
+  //               }
+  //               print(selectedData);
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Text("Print Data"),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Text("Close"),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+
 }
