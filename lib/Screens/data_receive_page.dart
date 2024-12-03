@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bluetooth_serial_ble/flutter_bluetooth_serial_ble.dart';
 
+import 'data_plot.dart';
+
 class ChatPage extends StatefulWidget {
   final BluetoothDevice server;
 
@@ -41,7 +43,7 @@ class _ChatPageState extends State<ChatPage> {
   int dataPointCounter = 0;
   int _currentMinX = 0;
   int _currentMaxX = 200;
-  double sliderValue = 0;
+  int selectedIndex = -1;
 
   @override
   void initState() {
@@ -106,8 +108,7 @@ class _ChatPageState extends State<ChatPage> {
                     onHorizontalDragUpdate: (details) {
                       setState(() {
                         int dragDirection = details.delta.dx < 0 ? 1 : -1;
-                        // Adjust the factor for sensitivity
-                        _currentMinX += dragDirection * 1;
+                        _currentMinX += dragDirection * 1; // Adjust the factor for sensitivity
                         _currentMaxX += dragDirection * 1;
 
                         // Clamp the values to the range of the data length
@@ -115,14 +116,23 @@ class _ChatPageState extends State<ChatPage> {
                         _currentMaxX = _currentMaxX.clamp(maxVisibleXRange, data.length);
                       });
                     },
+                    onTapUp: (details) {
+                      setState(() {
+                        double x = details.localPosition.dx;
+                        selectedIndex = ((x / MediaQuery.of(context).size.width) * maxVisibleXRange + _currentMinX).toInt();
+                      });
+                    },
                     child: LineChart(
+
                       LineChartData(
                         maxX: _currentMaxX.toDouble(),
                         minX: _currentMinX.toDouble(),
                         minY: 0,
                         maxY: 1,
+                        lineTouchData: LineTouchData( enabled: false,),
                         lineBarsData: [
-                          LineChartBarData(color: Colors.red,
+                          LineChartBarData(
+                            color: Colors.red,
                             spots: _createSpots(),
                             isCurved: false,
                             dotData: FlDotData(show: false),
@@ -162,7 +172,8 @@ class _ChatPageState extends State<ChatPage> {
                         startFlag = false;
                       });
                     },
-                  ) : IconButton(
+                  )
+                      : IconButton(
                     icon: Icon(Icons.play_arrow, color: isConnected ? Colors.green : Colors.grey),
                     onPressed: isConnected ? () {
                       _sendMessage("1");
@@ -171,13 +182,25 @@ class _ChatPageState extends State<ChatPage> {
                       });
                     }: null,
                   ),
-
-                  // data.length > 1000 ? ElevatedButton(onPressed: (){_showSelectionDialog();}, child: Text("Submit")): Container(),
-
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10.0),
-                    child: Text("${data.length.toString()} Dp"),
+                  Visibility(
+                    visible: data.length > 1000 && !startFlag,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (selectedIndex != -1) {
+                          List<double> predictionData = _processSelectedData(selectedIndex);
+                          print(predictionData);
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => DataPlot(predictionData)));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Please select a point on the chart"),
+                            backgroundColor: Colors.blue,),
+                          );
+                        }
+                      },
+                      child: Text("Extract"),
+                    ),
                   ),
+                  Text("${data.length.toString()} Dp"),
                 ],
               ),
               SizedBox(height: 5,),
@@ -260,61 +283,15 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-
-
-  // void _showSelectionDialog() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: Text("Select 1000 Points Range"),
-  //         content: StatefulBuilder(
-  //           builder: (BuildContext context, StateSetter setState) {
-  //             return Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 Slider(
-  //                   value: sliderValue,
-  //                   min: 0,
-  //                   max: (data.length - 1000).toDouble(),
-  //                   divisions: data.length - 1000,
-  //                   label: sliderValue.toInt().toString(),
-  //                   onChanged: (double value) {
-  //                     setState(() {
-  //                       sliderValue = value;
-  //                     });
-  //                   },
-  //                 ),
-  //               ],
-  //             );
-  //           },
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               int startIndex = sliderValue.toInt();
-  //               List<double> selectedData;
-  //               if (startIndex + 1000 <= data.length) {
-  //                 selectedData = data.sublist(startIndex, startIndex + 1000);
-  //               } else {
-  //                 selectedData = data.sublist(data.length - 1000);
-  //               }
-  //               print(selectedData);
-  //               Navigator.of(context).pop();
-  //             },
-  //             child: Text("Print Data"),
-  //           ),
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.of(context).pop();
-  //             },
-  //             child: Text("Close"),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
+  List<double> _processSelectedData(int index) {
+    List<double> selectedData;
+    if (index + 1000 <= data.length) {
+      selectedData = data.sublist(index, index + 1000);
+    } else {
+      selectedData = data.sublist(data.length - 1000);
+    }
+    return selectedData;
+  }
 
 
 }
