@@ -56,7 +56,7 @@ class _DataPlotState extends State<DataPlot> {
                       LineChartBarData(
                         spots: dataPoints,
                         isCurved: true,
-                        color: Colors.blue,
+                        color: Colors.red,
                         barWidth: 2,
                         isStrokeCapRound: true,
                         dotData: const FlDotData(show: false),
